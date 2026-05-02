@@ -3,172 +3,143 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Human Response Simulator</title>
+<title>Human Performance Simulator</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600&family=JetBrains+Mono:wght@500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap');
 
   :root {
-    --bg: #f8fafc;
+    --bg: #fdfdfd;
     --surface: #ffffff;
-    --border: #e2e8f0;
-    --text: #0f172a;
-    --muted: #64748b;
-    --hardwork: #ef4444; 
-    --experience: #f59e0b; 
-    --planning: #10b981; 
-    --step: #6366f1;
+    --border: #eef0f2;
+    --text: #1a1c1e;
+    --muted: #747d8c;
+    --hardwork: #ff4757; 
+    --experience: #ffa502; 
+    --planning: #2ed573; 
+    --target: #3742fa;
   }
 
-  body {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    padding: 20px;
-    max-width: 650px;
-    margin: 0 auto;
-  }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); padding: 15px; max-width: 600px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 20px; }
+  h1 { font-size: 1.3rem; margin-bottom: 5px; }
+  .subtitle { font-size: 0.85rem; color: var(--muted); }
 
-  header { margin-bottom: 20px; text-align: center; }
-  h1 { font-size: 1.4rem; font-weight: 700; }
-  .subtitle { font-size: 0.9rem; color: var(--muted); }
-
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-  }
-
-  .card-title {
-    font-size: 0.7rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-    margin-bottom: 20px;
-    display: block;
-  }
-
-  canvas { width: 100%; height: 280px; background: #fff; border-radius: 8px; }
-
-  .slider-group { margin-bottom: 18px; }
-  .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.9rem; font-weight: 600; }
-  .slider-desc { font-weight: 400; font-size: 0.75rem; color: var(--muted); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
+  .card-title { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 15px; display: block; }
   
-  input[type=range] {
-    -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: #e2e8f0; outline: none;
-  }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid currentColor; cursor: pointer;
-  }
+  canvas { width: 100%; height: 260px; border-radius: 12px; background: #fff; }
 
-  .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .metric-box { background: #f1f5f9; padding: 14px; border-radius: 12px; border: 1px solid #e2e8f0; }
-  .metric-label { font-size: 0.65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
-  .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 600; }
+  .slider-group { margin-bottom: 15px; }
+  .slider-info { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.85rem; font-weight: 600; }
+  .slider-desc { font-weight: 400; font-size: 0.7rem; color: var(--muted); }
+
+  input[type=range] { -webkit-appearance: none; width: 100%; height: 5px; background: #f1f2f6; border-radius: 10px; outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid currentColor; cursor: pointer; }
+
+  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .m-box { background: #f9f9fb; padding: 12px; border-radius: 15px; border: 1px solid var(--border); }
+  .m-label { font-size: 0.6rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+  .m-val { font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 600; margin-top: 2px; }
 
   .c-hw { color: var(--hardwork); }
   .c-ex { color: var(--experience); }
   .c-pl { color: var(--planning); }
-  .c-tg { color: var(--step); }
+  .c-tg { color: var(--target); }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Human Response Simulator</h1>
-  <div class="subtitle">Finding the balance between Drive and Foresight</div>
+  <h1>The Human PID Balance</h1>
+  <div class="subtitle">Action, History, and Foresight</div>
 </header>
 
 <div class="card">
-  <span class="card-title">Live Performance Visualization</span>
+  <span class="card-title">Live Response Graph</span>
   <canvas id="plot"></canvas>
 </div>
 
 <div class="card">
-  <span class="card-title">Behavioral Inputs</span>
-
+  <span class="card-title">Parameters of Character</span>
+  
   <div class="slider-group">
-    <div class="slider-header">
-      <span>Hard Work <span class="slider-desc">(Kp)</span></span>
-      <span class="c-hw" id="hw-read">1.50</span>
+    <div class="slider-info">
+      <span>Hard Work <span class="slider-desc">(Speed & Drive)</span></span>
+      <span class="c-hw" id="v-hw">1.0</span>
     </div>
-    <input type="range" id="hw" min="0" max="5" step="0.05" value="2.0" class="c-hw">
+    <input type="range" id="hw" min="0" max="3" step="0.1" value="1.2" class="c-hw">
   </div>
 
   <div class="slider-group">
-    <div class="slider-header">
-      <span>Experience <span class="slider-desc">(Ki)</span></span>
-      <span class="c-ex" id="ex-read">0.50</span>
+    <div class="slider-info">
+      <span>Experience <span class="slider-desc">(Persistence/Obsession)</span></span>
+      <span class="c-ex" id="v-ex">0.5</span>
     </div>
-    <input type="range" id="ex" min="0" max="3" step="0.05" value="0.8" class="c-ex">
+    <input type="range" id="ex" min="0" max="3" step="0.1" value="0.4" class="c-ex">
   </div>
 
   <div class="slider-group">
-    <div class="slider-header">
-      <span>Planning <span class="slider-desc">(Kd - The Brakes)</span></span>
-      <span class="c-pl" id="pl-read">0.20</span>
+    <div class="slider-info">
+      <span>Planning <span class="slider-desc">(Strategic Damping)</span></span>
+      <span class="c-pl" id="v-pl">0.1</span>
     </div>
-    <!-- Adjusted range for visibility -->
-    <input type="range" id="pl" min="0" max="2" step="0.01" value="0.2" class="c-pl">
+    <input type="range" id="pl" min="0" max="2" step="0.05" value="0.2" class="c-pl">
   </div>
 
-  <div style="border-top: 1px solid var(--border); margin: 20px 0;"></div>
+  <div style="border-top: 1px solid var(--border); margin: 15px 0;"></div>
 
   <div class="slider-group">
-    <div class="slider-header">
-      <span>Target Change</span>
-      <span class="c-tg" id="tg-read">1.00</span>
+    <div class="slider-info">
+      <span>Life Goal <span class="slider-desc">(The Target)</span></span>
+      <span class="c-tg" id="v-tg">1.0</span>
     </div>
-    <input type="range" id="tg" min="-2" max="2" step="0.1" value="1.0" class="c-tg">
+    <input type="range" id="tg" min="-1.5" max="1.5" step="0.1" value="1.0" class="c-tg">
   </div>
 </div>
 
 <div class="card">
   <span class="card-title">Outcome Analysis</span>
   <div class="metrics">
-    <div class="metric-box">
-      <div class="metric-label">Initiative</div>
-      <div class="metric-val c-hw" id="m-rise">—</div>
-    </div>
-    <div class="metric-box">
-      <div class="metric-label">Burnout</div>
-      <div class="metric-val c-hw" id="m-burnout">—</div>
-    </div>
-    <div class="metric-box">
-      <div class="metric-label">Stability</div>
-      <div class="metric-val c-pl" id="m-settle">—</div>
-    </div>
-    <div class="metric-box">
-      <div class="metric-label">Reliability</div>
-      <div class="metric-val c-ex" id="m-ss">—</div>
-    </div>
+    <div class="m-box"><div class="m-label">Initiative</div><div class="m-val c-hw" id="m-rise">—</div></div>
+    <div class="m-box"><div class="m-label">Burnout (Overshoot)</div><div class="m-val c-hw" id="m-burn">—</div></div>
+    <div class="m-box"><div class="m-label">Stabilization Time</div><div class="m-val c-pl" id="m-settle">—</div></div>
+    <div class="m-box"><div class="m-label">Reliability</div><div class="m-val c-ex" id="m-ss">—</div></div>
   </div>
 </div>
 
 <script>
-const DT = 0.015, T = 15, N = Math.round(T / DT);
+const DT = 0.02, T = 15, N = Math.round(T / DT);
 const canvas = document.getElementById('plot');
 const ctx = canvas.getContext('2d');
 
+// --- THE LOGIC ---
 function simulate(Kp, Ki, Kd, sp) {
   const out = new Float32Array(N);
-  let y = 0, integral = 0, prevE = 0;
+  let y = 0, integral = 0, prevE = 0, filteredD = 0;
   
-  // Internal tuning for "Human" scale
-  const internalKd = Kd * 0.15; 
+  // Higher Alpha = Planning is more "up to date" but more jittery
+  // Lower Alpha = Planning is calmer but slower to react (Filtering)
+  const alpha = 0.15; 
 
   for (let i = 0; i < N; i++) {
     const e = sp - y;
-    integral = Math.max(-10, Math.min(10, integral + e * DT));
-    const deriv = (e - prevE) / DT;
     
-    const u = (Kp * e) + (Ki * integral) + (internalKd * deriv);
+    // 1. Experience (Integral) - Accumulated over time
+    integral += e * DT;
+    integral = Math.max(-2, Math.min(2, integral)); // Anti-windup
+
+    // 2. Planning (Derivative with Filter)
+    // This solves the "going wild" problem.
+    const rawD = (e - prevE) / DT;
+    filteredD = alpha * rawD + (1 - alpha) * filteredD; 
+
+    // 3. Total Force
+    // We scale Kd down slightly so it's a "helper" not the "boss"
+    const u = (Kp * e) + (Ki * integral) + (Kd * 0.8 * filteredD);
     
-    // The "Plant": Human response often has a bit of inertia
-    y += (u - y) * 0.08; 
+    // 4. Human Inertia (The 'Plant')
+    // A person cannot move instantly. This adds a realistic delay.
+    y += (u - y) * 0.15; 
     
     out[i] = y;
     prevE = e;
@@ -182,90 +153,76 @@ function update() {
   const pl = +document.getElementById('pl').value;
   const tg = +document.getElementById('tg').value;
 
-  document.getElementById('hw-read').textContent = hw.toFixed(2);
-  document.getElementById('ex-read').textContent = ex.toFixed(2);
-  document.getElementById('pl-read').textContent = pl.toFixed(2);
-  document.getElementById('tg-read').textContent = (tg > 0 ? '+': '') + tg.toFixed(1);
+  document.getElementById('v-hw').innerText = hw.toFixed(1);
+  document.getElementById('v-ex').innerText = ex.toFixed(1);
+  document.getElementById('v-pl').innerText = pl.toFixed(2);
+  document.getElementById('v-tg').innerText = tg.toFixed(1);
 
-  const results = simulate(hw, ex, pl, tg);
-  draw(results, tg);
-  calculateMetrics(results, tg);
+  const data = simulate(hw, ex, pl, tg);
+  draw(data, tg);
+  calc(data, tg);
 }
 
-function calculateMetrics(out, sp) {
-  if (Math.abs(sp) < 0.05) return;
-  const sign = sp > 0 ? 1 : -1;
+function calc(data, sp) {
+  if (Math.abs(sp) < 0.1) return;
+  const s = sp > 0 ? 1 : -1;
+  const r1 = data.findIndex(v => s*v >= s*sp*0.9);
+  document.getElementById('m-rise').innerText = r1 > 0 ? (r1*DT).toFixed(2)+'s' : '—';
   
-  // Rise Time
-  let r1 = out.findIndex(v => sign*v >= sign*sp*0.9);
-  document.getElementById('m-rise').textContent = r1 > 0 ? (r1*DT).toFixed(2) + 's' : '—';
-
-  // Burnout
   let max = 0;
-  for(let v of out) if(sign*v > sign*max) max = v;
-  const over = ((sign*max - Math.abs(sp)) / Math.abs(sp)) * 100;
-  document.getElementById('m-burnout').textContent = over > 1 ? over.toFixed(1) + '%' : 'Optimal';
+  for(let v of data) if(s*v > s*max) max = v;
+  const over = ((s*max - Math.abs(sp)) / Math.abs(sp)) * 100;
+  document.getElementById('m-burn').innerText = over > 1 ? over.toFixed(1)+'%' : 'None';
 
-  // Settle
-  let si = N - 1;
-  for(let i = N-1; i>=0; i--) {
-    if(Math.abs(out[i]-sp) > Math.abs(sp)*0.03) { si = i; break; }
-  }
-  document.getElementById('m-settle').textContent = (si * DT).toFixed(1) + 's';
-  document.getElementById('m-ss').textContent = out[N-1].toFixed(2);
+  let si = N-1;
+  for(let i=N-1; i>=0; i--) if(Math.abs(data[i]-sp) > Math.abs(sp)*0.05) { si=i; break; }
+  document.getElementById('m-settle').innerText = (si*DT).toFixed(1)+'s';
+  document.getElementById('m-ss').innerText = data[N-1].toFixed(2);
 }
 
 function draw(data, sp) {
   const W = canvas.width = canvas.offsetWidth * 2;
-  const H = canvas.height = 280 * 2;
+  const H = canvas.height = 260 * 2;
   ctx.scale(2,2);
   const w = W/2, h = H/2;
   ctx.clearRect(0,0,w,h);
-  
-  const PAD = { L: 45, R: 20, T: 30, B: 40 };
-  const gW = w - PAD.L - PAD.R, gH = h - PAD.T - PAD.B;
-  const toX = i => PAD.L + (i/(N-1)) * gW;
-  const toY = v => (h - PAD.B) - ((v + 2.5) / 5) * gH;
 
-  // Axes
-  ctx.strokeStyle = '#e2e8f0';
-  ctx.font = "600 9px JetBrains Mono";
-  ctx.fillStyle = "#94a3b8";
-  for(let i=-2; i<=2; i++) {
-    const y = toY(i);
-    ctx.beginPath(); ctx.moveTo(PAD.L, y); ctx.lineTo(PAD.L + gW, y); ctx.stroke();
-    ctx.fillText(i.toFixed(1), 15, y + 3);
+  const P = { L: 45, R: 15, T: 30, B: 35 };
+  const gW = w-P.L-P.R, gH = h-P.T-P.B;
+  const toX = i => P.L + (i/(N-1))*gW;
+  const toY = v => (h-P.B) - ((v + 2)/4)*gH;
+
+  // Grid
+  ctx.strokeStyle = '#f1f2f6';
+  ctx.lineWidth = 1;
+  for(let i=-2; i<=2; i+=1) {
+    ctx.beginPath(); ctx.moveTo(P.L, toY(i)); ctx.lineTo(P.L+gW, toY(i)); ctx.stroke();
   }
 
-  // Legend
-  ctx.font = "bold 9px Plus Jakarta Sans";
-  ctx.fillStyle = "#6366f1"; ctx.fillText("-- Target", PAD.L, 15);
-  ctx.fillStyle = "#0f172a"; ctx.fillText("— Progress", PAD.L + 60, 15);
+  // Labels
+  ctx.fillStyle = '#9ca3af';
+  ctx.font = '600 8px JetBrains Mono';
+  ctx.fillText("STATE (PROGRESS)", 5, P.T - 10);
+  ctx.fillText("TIME →", w - 40, h - 10);
 
   // Target
-  ctx.setLineDash([5, 4]);
-  ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(PAD.L, toY(sp)); ctx.lineTo(PAD.L+gW, toY(sp)); ctx.stroke();
+  ctx.setLineDash([5, 5]);
+  ctx.strokeStyle = 'rgba(55, 66, 250, 0.4)';
+  ctx.beginPath(); ctx.moveTo(P.L, toY(sp)); ctx.lineTo(P.L+gW, toY(sp)); ctx.stroke();
   ctx.setLineDash([]);
 
-  // Progress
-  ctx.strokeStyle = '#0f172a';
+  // Line
+  ctx.strokeStyle = '#1a1c1e';
   ctx.lineWidth = 2.5;
-  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
   ctx.beginPath();
   ctx.moveTo(toX(0), toY(0));
   for(let i=0; i<N; i++) ctx.lineTo(toX(i), toY(data[i]));
   ctx.stroke();
-
-  // Labels
-  ctx.fillStyle = "#64748b";
-  ctx.textAlign = "center";
-  ctx.fillText("TIME →", PAD.L + gW/2, h - 10);
 }
 
+document.querySelectorAll('input').forEach(el => el.addEventListener('input', update));
 window.addEventListener('resize', update);
-document.querySelectorAll('input').forEach(i => i.addEventListener('input', update));
 update();
 </script>
 </body>
