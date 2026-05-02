@@ -55,7 +55,7 @@
 </header>
 
 <div class="card">
-  <span class="card-title">Live Response Graph</span>
+  <span class="card-title">Positive Progress Graph</span>
   <canvas id="plot"></canvas>
 </div>
 
@@ -80,7 +80,7 @@
 
   <div class="slider-group">
     <div class="slider-info">
-      <span>Planning <span class="slider-desc">(Kd - Dampening)</span></span>
+      <span>Planning <span class="slider-desc">(Kd)</span></span>
       <span class="c-pl" id="v-pl">0.5</span>
     </div>
     <input type="range" id="pl" min="0" max="2" step="0.01" value="0.5" class="c-pl">
@@ -90,10 +90,11 @@
 
   <div class="slider-group">
     <div class="slider-info">
-      <span>Target Change</span>
+      <span>Target Goal <span class="slider-desc">(0.0 to 2.0)</span></span>
       <span class="c-tg" id="v-tg">1.0</span>
     </div>
-    <input type="range" id="tg" min="-1.5" max="1.5" step="0.1" value="1.0" class="c-tg">
+    <!-- Target now only 0 to 2 -->
+    <input type="range" id="tg" min="0" max="2" step="0.1" value="1.0" class="c-tg">
   </div>
 </div>
 
@@ -115,30 +116,27 @@ const ctx = canvas.getContext('2d');
 function simulate(Kp, Ki, Kd, sp) {
   const out = new Float32Array(N);
   let y = 0, integral = 0, prevY = 0, filteredDeriv = 0;
-  
-  // Reduced filtering to make Kd more reactive/visible
   const lpf = 0.25; 
 
   for (let i = 0; i < N; i++) {
     const e = sp - y;
     
-    // Experience (Integral)
     integral += e * DT;
     integral = Math.max(-2, Math.min(2, integral)); 
 
-    // Planning (Derivative) - We use Kd * 4 to make the impact obvious
     const rawDeriv = (y - prevY) / DT;
     filteredDeriv = lpf * rawDeriv + (1 - lpf) * filteredDeriv;
 
-    // The Force: Kp pulls forward, Ki pushes steady, Kd acts as the Brake (opposing velocity)
     let u = (Kp * e) + (Ki * integral) - (Kd * 5.0 * filteredDeriv);
     
-    // Saturation (Human Limit)
-    u = Math.max(-6, Math.min(6, u));
+    // Saturation & Positive Clamp (Can't go below 0 effort)
+    u = Math.max(-2, Math.min(6, u));
 
-    // Plant: Human Inertia (lower factor = more 'swing', making Kd more useful)
     y += (u - y) * 0.1; 
     
+    // Ensure progress is never negative
+    if (y < 0) y = 0;
+
     out[i] = y;
     prevY = y;
   }
@@ -159,17 +157,24 @@ function update() {
   const data = simulate(hw, ex, pl, tg);
   draw(data, tg);
   
-  // Metrics
-  if (Math.abs(tg) < 0.1) return;
-  const s = tg > 0 ? 1 : -1;
-  const r1 = data.findIndex(v => s*v >= s*tg*0.9);
+  if (tg <= 0.05) {
+    document.getElementById('m-rise').innerText = "N/A";
+    document.getElementById('m-burn').innerText = "0%";
+    document.getElementById('m-settle').innerText = "0s";
+    document.getElementById('m-ss').innerText = "0.00";
+    return;
+  }
+
+  const r1 = data.findIndex(v => v >= tg*0.9);
   document.getElementById('m-rise').innerText = r1 > 0 ? (r1*DT).toFixed(2)+'s' : '—';
+  
   let max = 0;
-  for(let v of data) if(s*v > s*max) max = v;
-  const over = ((s*max - Math.abs(tg)) / Math.abs(tg)) * 100;
+  for(let v of data) if(v > max) max = v;
+  const over = ((max - tg) / tg) * 100;
   document.getElementById('m-burn').innerText = over > 1 ? over.toFixed(1)+'%' : 'Healthy';
+  
   let si = N-1;
-  for(let i=N-1; i>=0; i--) if(Math.abs(data[i]-tg) > Math.abs(tg)*0.03) { si=i; break; }
+  for(let i=N-1; i>=0; i--) if(Math.abs(data[i]-tg) > tg*0.03) { si=i; break; }
   document.getElementById('m-settle').innerText = (si*DT).toFixed(1)+'s';
   document.getElementById('m-ss').innerText = data[N-1].toFixed(2);
 }
@@ -183,23 +188,27 @@ function draw(data, sp) {
 
   const PAD = { L: 40, R: 15, T: 30, B: 30 };
   const gW = w-PAD.L-PAD.R, gH = h-PAD.T-PAD.B;
+  
+  // Adjusted for 0 to 2 scale
   const toX = i => PAD.L + (i/(N-1))*gW;
-  const toY = v => (h-PAD.B) - ((v + 2.5) / 5) * gH;
+  const toY = v => (h-PAD.B) - (v / 2.2) * gH;
 
-  // Burnout Zone (Subtle Red Area)
-  if (sp !== 0) {
-    const s = sp > 0 ? 1 : -1;
-    ctx.fillStyle = 'rgba(239, 68, 68, 0.05)';
-    if (s > 0) ctx.fillRect(PAD.L, PAD.T, gW, toY(sp * 1.1) - PAD.T);
-    else ctx.fillRect(PAD.L, toY(sp * 1.1), gW, (h-PAD.B) - toY(sp * 1.1));
+  // Burnout Zone (Red at top)
+  if (sp > 0) {
+    ctx.fillStyle = 'rgba(239, 68, 68, 0.04)';
+    const burnoutStart = toY(sp * 1.05);
+    ctx.fillRect(PAD.L, PAD.T, gW, burnoutStart - PAD.T);
   }
 
   // Grid
   ctx.strokeStyle = '#f1f5f9';
   ctx.lineWidth = 1;
-  for(let i=-2; i<=2; i+=1) {
+  for(let i=0; i<=2; i+=0.5) {
     const y = toY(i);
     ctx.beginPath(); ctx.moveTo(PAD.L, y); ctx.lineTo(PAD.L+gW, y); ctx.stroke();
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "bold 8px JetBrains Mono";
+    ctx.fillText(i.toFixed(1), 15, y + 3);
   }
 
   // Target Line
@@ -208,19 +217,21 @@ function draw(data, sp) {
   ctx.beginPath(); ctx.moveTo(PAD.L, toY(sp)); ctx.lineTo(PAD.L+gW, toY(sp)); ctx.stroke();
   ctx.setLineDash([]);
 
-  // Labeling
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = "bold 8px Plus Jakarta Sans";
-  ctx.fillText("TARGET", PAD.L + 5, toY(sp) - 5);
-
-  // Path Line
+  // Progress Line
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 2.5;
   ctx.lineJoin = 'round';
   ctx.beginPath();
   ctx.moveTo(toX(0), toY(0));
-  for(let i=0; i<N; i++) ctx.lineTo(toX(i), data[i] > 2.5 ? toY(2.5) : data[i] < -2.5 ? toY(-2.5) : toY(data[i]));
+  for(let i=0; i<N; i++) {
+      ctx.lineTo(toX(i), toY(data[i]));
+  }
   ctx.stroke();
+
+  // Axis Labels
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "bold 8px Plus Jakarta Sans";
+  ctx.fillText("TIME →", w - 45, h - 8);
 }
 
 document.querySelectorAll('input').forEach(el => el.addEventListener('input', update));
