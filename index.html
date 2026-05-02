@@ -26,11 +26,10 @@
     padding: 20px;
     max-width: 650px;
     margin: 0 auto;
-    line-height: 1.5;
   }
 
   header { margin-bottom: 20px; text-align: center; }
-  h1 { font-size: 1.4rem; font-weight: 700; color: var(--text); }
+  h1 { font-size: 1.4rem; font-weight: 700; }
   .subtitle { font-size: 0.9rem; color: var(--muted); }
 
   .card {
@@ -52,12 +51,11 @@
     display: block;
   }
 
-  canvas { width: 100%; height: 260px; background: #fff; border-radius: 8px; cursor: crosshair; }
+  canvas { width: 100%; height: 280px; background: #fff; border-radius: 8px; }
 
-  /* Sliders */
   .slider-group { margin-bottom: 18px; }
   .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.9rem; font-weight: 600; }
-  .slider-desc { font-weight: 400; font-size: 0.75rem; color: var(--muted); margin-left: 4px;}
+  .slider-desc { font-weight: 400; font-size: 0.75rem; color: var(--muted); }
   
   input[type=range] {
     -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: #e2e8f0; outline: none;
@@ -66,10 +64,9 @@
     -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid currentColor; cursor: pointer;
   }
 
-  /* Metrics Grid */
-  .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px; }
+  .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .metric-box { background: #f1f5f9; padding: 14px; border-radius: 12px; border: 1px solid #e2e8f0; }
-  .metric-label { font-size: 0.65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 4px;}
+  .metric-label { font-size: 0.65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
   .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 600; }
 
   .c-hw { color: var(--hardwork); }
@@ -82,93 +79,97 @@
 
 <header>
   <h1>Human Response Simulator</h1>
-  <div class="subtitle">Dynamics of Hard Work, Experience, and Planning</div>
+  <div class="subtitle">Finding the balance between Drive and Foresight</div>
 </header>
 
-<!-- 1. PLOT -->
 <div class="card">
-  <span class="card-title">Behavioral Dynamics Plot</span>
+  <span class="card-title">Live Performance Visualization</span>
   <canvas id="plot"></canvas>
 </div>
 
-<!-- 2. SLIDERS -->
 <div class="card">
-  <span class="card-title">Adjustment of Traits</span>
+  <span class="card-title">Behavioral Inputs</span>
 
   <div class="slider-group">
     <div class="slider-header">
-      <span>Hard Work <span class="slider-desc">(Drive)</span></span>
+      <span>Hard Work <span class="slider-desc">(Kp)</span></span>
       <span class="c-hw" id="hw-read">1.50</span>
     </div>
-    <input type="range" id="hw" min="0" max="4" step="0.05" value="1.5" class="c-hw">
+    <input type="range" id="hw" min="0" max="5" step="0.05" value="2.0" class="c-hw">
   </div>
 
   <div class="slider-group">
     <div class="slider-header">
-      <span>Experience <span class="slider-desc">(Consistency)</span></span>
+      <span>Experience <span class="slider-desc">(Ki)</span></span>
       <span class="c-ex" id="ex-read">0.50</span>
     </div>
-    <input type="range" id="ex" min="0" max="2" step="0.05" value="0.5" class="c-ex">
+    <input type="range" id="ex" min="0" max="3" step="0.05" value="0.8" class="c-ex">
   </div>
 
   <div class="slider-group">
     <div class="slider-header">
-      <span>Planning <span class="slider-desc">(Damping)</span></span>
-      <span class="c-pl" id="pl-read">0.05</span>
+      <span>Planning <span class="slider-desc">(Kd - The Brakes)</span></span>
+      <span class="c-pl" id="pl-read">0.20</span>
     </div>
-    <!-- Reduced range and smaller default for Planning to avoid extreme jitter -->
-    <input type="range" id="pl" min="0" max="0.5" step="0.01" value="0.05" class="c-pl">
+    <!-- Adjusted range for visibility -->
+    <input type="range" id="pl" min="0" max="2" step="0.01" value="0.2" class="c-pl">
   </div>
 
   <div style="border-top: 1px solid var(--border); margin: 20px 0;"></div>
 
   <div class="slider-group">
     <div class="slider-header">
-      <span>Target Change <span class="slider-desc">(Goal)</span></span>
+      <span>Target Change</span>
       <span class="c-tg" id="tg-read">1.00</span>
     </div>
     <input type="range" id="tg" min="-2" max="2" step="0.1" value="1.0" class="c-tg">
   </div>
 </div>
 
-<!-- 3. OUTCOME ANALYSIS (Moved to bottom) -->
 <div class="card">
   <span class="card-title">Outcome Analysis</span>
   <div class="metrics">
     <div class="metric-box">
-      <div class="metric-label">Initiative (Rise Time)</div>
+      <div class="metric-label">Initiative</div>
       <div class="metric-val c-hw" id="m-rise">—</div>
     </div>
     <div class="metric-box">
-      <div class="metric-label">Burnout (Overshoot)</div>
+      <div class="metric-label">Burnout</div>
       <div class="metric-val c-hw" id="m-burnout">—</div>
     </div>
     <div class="metric-box">
-      <div class="metric-label">Stability (Settling)</div>
+      <div class="metric-label">Stability</div>
       <div class="metric-val c-pl" id="m-settle">—</div>
     </div>
     <div class="metric-box">
-      <div class="metric-label">Reliability (Steady State)</div>
+      <div class="metric-label">Reliability</div>
       <div class="metric-val c-ex" id="m-ss">—</div>
     </div>
   </div>
 </div>
 
 <script>
-const DT = 0.02, T = 20, N = Math.round(T / DT);
+const DT = 0.015, T = 15, N = Math.round(T / DT);
 const canvas = document.getElementById('plot');
 const ctx = canvas.getContext('2d');
 
 function simulate(Kp, Ki, Kd, sp) {
   const out = new Float32Array(N);
   let y = 0, integral = 0, prevE = 0;
+  
+  // Internal tuning for "Human" scale
+  const internalKd = Kd * 0.15; 
+
   for (let i = 0; i < N; i++) {
     const e = sp - y;
-    integral = Math.max(-5, Math.min(5, integral + e * DT));
-    // We keep Kd slightly scaled down internally for visual smoothness
+    integral = Math.max(-10, Math.min(10, integral + e * DT));
     const deriv = (e - prevE) / DT;
-    const u = Kp * e + Ki * integral + (Kd * 0.5) * deriv; 
-    y += (-y + u) * DT; 
+    
+    const u = (Kp * e) + (Ki * integral) + (internalKd * deriv);
+    
+    // The "Plant": Human response often has a bit of inertia
+    y += (u - y) * 0.08; 
+    
     out[i] = y;
     prevE = e;
   }
@@ -184,7 +185,7 @@ function update() {
   document.getElementById('hw-read').textContent = hw.toFixed(2);
   document.getElementById('ex-read').textContent = ex.toFixed(2);
   document.getElementById('pl-read').textContent = pl.toFixed(2);
-  document.getElementById('tg-read').textContent = tg.toFixed(2);
+  document.getElementById('tg-read').textContent = (tg > 0 ? '+': '') + tg.toFixed(1);
 
   const results = simulate(hw, ex, pl, tg);
   draw(results, tg);
@@ -192,30 +193,23 @@ function update() {
 }
 
 function calculateMetrics(out, sp) {
-  if (Math.abs(sp) < 0.05) {
-    document.getElementById('m-rise').textContent = '—';
-    document.getElementById('m-burnout').textContent = '—';
-    document.getElementById('m-settle').textContent = '—';
-    document.getElementById('m-ss').textContent = '0.00';
-    return;
-  }
+  if (Math.abs(sp) < 0.05) return;
   const sign = sp > 0 ? 1 : -1;
   
-  let r0 = -1, r1 = -1;
-  for(let i=0; i<N; i++) {
-    if(r0 < 0 && sign*out[i] >= sign*sp*0.1) r0 = i;
-    if(r1 < 0 && sign*out[i] >= sign*sp*0.9) r1 = i;
-  }
-  document.getElementById('m-rise').textContent = r1 > 0 ? ((r1-r0)*DT).toFixed(2) + 's' : '—';
+  // Rise Time
+  let r1 = out.findIndex(v => sign*v >= sign*sp*0.9);
+  document.getElementById('m-rise').textContent = r1 > 0 ? (r1*DT).toFixed(2) + 's' : '—';
 
-  let max = out[0];
+  // Burnout
+  let max = 0;
   for(let v of out) if(sign*v > sign*max) max = v;
   const over = ((sign*max - Math.abs(sp)) / Math.abs(sp)) * 100;
-  document.getElementById('m-burnout').textContent = over > 0.5 ? over.toFixed(1) + '%' : 'None';
+  document.getElementById('m-burnout').textContent = over > 1 ? over.toFixed(1) + '%' : 'Optimal';
 
+  // Settle
   let si = N - 1;
   for(let i = N-1; i>=0; i--) {
-    if(Math.abs(out[i]-sp) > Math.abs(sp)*0.02) { si = i; break; }
+    if(Math.abs(out[i]-sp) > Math.abs(sp)*0.03) { si = i; break; }
   }
   document.getElementById('m-settle').textContent = (si * DT).toFixed(1) + 's';
   document.getElementById('m-ss').textContent = out[N-1].toFixed(2);
@@ -223,64 +217,51 @@ function calculateMetrics(out, sp) {
 
 function draw(data, sp) {
   const W = canvas.width = canvas.offsetWidth * 2;
-  const H = canvas.height = 260 * 2;
+  const H = canvas.height = 280 * 2;
   ctx.scale(2,2);
   const w = W/2, h = H/2;
-  
   ctx.clearRect(0,0,w,h);
-  const PAD_L = 50, PAD_B = 40, PAD_T = 20, PAD_R = 20;
-  const graphW = w - PAD_L - PAD_R;
-  const graphH = h - PAD_T - PAD_B;
-
-  const toX = i => PAD_L + (i/(N-1)) * graphW;
-  const toY = v => (h - PAD_B) - ((v + 2.5) / 5) * graphH;
-
-  // Axis Labels
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = "bold 10px Plus Jakarta Sans";
   
-  // Y-Axis (State / Progress)
-  ctx.save();
-  ctx.translate(15, h/2);
-  ctx.rotate(-Math.PI/2);
-  ctx.textAlign = "center";
-  ctx.fillText("ACHIEVEMENT / STATE", 0, 0);
-  ctx.restore();
+  const PAD = { L: 45, R: 20, T: 30, B: 40 };
+  const gW = w - PAD.L - PAD.R, gH = h - PAD.T - PAD.B;
+  const toX = i => PAD.L + (i/(N-1)) * gW;
+  const toY = v => (h - PAD.B) - ((v + 2.5) / 5) * gH;
 
-  // X-Axis (Time)
-  ctx.textAlign = "center";
-  ctx.fillText("TIME (SECONDS)", PAD_L + graphW/2, h - 10);
-
-  // Grid & Y-Ticks
-  ctx.strokeStyle = '#f1f5f9';
-  ctx.lineWidth = 1;
-  ctx.textAlign = "right";
+  // Axes
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.font = "600 9px JetBrains Mono";
+  ctx.fillStyle = "#94a3b8";
   for(let i=-2; i<=2; i++) {
     const y = toY(i);
-    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(w-PAD_R, y); ctx.stroke();
-    ctx.fillText(i.toFixed(1), PAD_L - 8, y + 4);
+    ctx.beginPath(); ctx.moveTo(PAD.L, y); ctx.lineTo(PAD.L + gW, y); ctx.stroke();
+    ctx.fillText(i.toFixed(1), 15, y + 3);
   }
 
-  // Target Line
-  ctx.setLineDash([6, 4]);
-  ctx.strokeStyle = 'rgba(99, 102, 241, 0.4)';
+  // Legend
+  ctx.font = "bold 9px Plus Jakarta Sans";
+  ctx.fillStyle = "#6366f1"; ctx.fillText("-- Target", PAD.L, 15);
+  ctx.fillStyle = "#0f172a"; ctx.fillText("— Progress", PAD.L + 60, 15);
+
+  // Target
+  ctx.setLineDash([5, 4]);
+  ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)';
   ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(PAD_L, toY(sp)); ctx.lineTo(w-PAD_R, toY(sp));
-  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PAD.L, toY(sp)); ctx.lineTo(PAD.L+gW, toY(sp)); ctx.stroke();
   ctx.setLineDash([]);
 
-  // Progress Line
+  // Progress
   ctx.strokeStyle = '#0f172a';
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2.5;
   ctx.lineJoin = 'round';
   ctx.beginPath();
   ctx.moveTo(toX(0), toY(0));
-  for(let i=0; i<N; i++) {
-    const x = toX(i), y = toY(data[i]);
-    if(y > 0 && y < h) ctx.lineTo(x, y); // Keep drawing within bounds
-  }
+  for(let i=0; i<N; i++) ctx.lineTo(toX(i), toY(data[i]));
   ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = "#64748b";
+  ctx.textAlign = "center";
+  ctx.fillText("TIME →", PAD.L + gW/2, h - 10);
 }
 
 window.addEventListener('resize', update);
