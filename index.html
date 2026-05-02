@@ -34,8 +34,7 @@
   .slider-desc { font-weight: 400; font-size: 0.7rem; color: var(--muted); }
 
   input[type=range] { -webkit-appearance: none; width: 100%; height: 4px; background: #e2e8f0; border-radius: 2px; outline: none; }
-  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 2px solid currentColor; cursor: pointer; transition: transform 0.1s; }
-  input[type=range]::-webkit-slider-thumb:active { transform: scale(1.2); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 2px solid currentColor; cursor: pointer; }
 
   .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .m-box { background: #f1f5f9; padding: 10px; border-radius: 12px; border: 1px solid var(--border); }
@@ -56,7 +55,7 @@
 </header>
 
 <div class="card">
-  <span class="card-title">Response Visualization</span>
+  <span class="card-title">Live Response Graph</span>
   <canvas id="plot"></canvas>
 </div>
 
@@ -65,34 +64,33 @@
   
   <div class="slider-group">
     <div class="slider-info">
-      <span>Hard Work <span class="slider-desc">(Drive)</span></span>
-      <span class="c-hw" id="v-hw">1.5</span>
+      <span>Hard Work <span class="slider-desc">(Kp)</span></span>
+      <span class="c-hw" id="v-hw">2.0</span>
     </div>
-    <input type="range" id="hw" min="0" max="4" step="0.1" value="1.5" class="c-hw">
+    <input type="range" id="hw" min="0" max="5" step="0.1" value="2.5" class="c-hw">
   </div>
 
   <div class="slider-group">
     <div class="slider-info">
-      <span>Experience <span class="slider-desc">(Persistence)</span></span>
+      <span>Experience <span class="slider-desc">(Ki)</span></span>
       <span class="c-ex" id="v-ex">0.5</span>
     </div>
-    <input type="range" id="ex" min="0" max="3" step="0.1" value="0.5" class="c-ex">
+    <input type="range" id="ex" min="0" max="4" step="0.1" value="0.8" class="c-ex">
   </div>
 
   <div class="slider-group">
     <div class="slider-info">
-      <span>Planning <span class="slider-desc">(Strategic Damping)</span></span>
-      <span class="c-pl" id="v-pl">0.1</span>
+      <span>Planning <span class="slider-desc">(Kd - Dampening)</span></span>
+      <span class="c-pl" id="v-pl">0.5</span>
     </div>
-    <!-- Adjusted range for smoother feedback -->
-    <input type="range" id="pl" min="0" max="1" step="0.01" value="0.1" class="c-pl">
+    <input type="range" id="pl" min="0" max="2" step="0.01" value="0.5" class="c-pl">
   </div>
 
   <div style="border-top: 1px solid var(--border); margin: 15px 0;"></div>
 
   <div class="slider-group">
     <div class="slider-info">
-      <span>Goal Size <span class="slider-desc">(Target)</span></span>
+      <span>Target Change</span>
       <span class="c-tg" id="v-tg">1.0</span>
     </div>
     <input type="range" id="tg" min="-1.5" max="1.5" step="0.1" value="1.0" class="c-tg">
@@ -105,7 +103,7 @@
     <div class="m-box"><div class="m-label">Initiative</div><div class="m-val c-hw" id="m-rise">—</div></div>
     <div class="m-box"><div class="m-label">Burnout (Overshoot)</div><div class="m-val c-hw" id="m-burn">—</div></div>
     <div class="m-box"><div class="m-label">Stability Time</div><div class="m-val c-pl" id="m-settle">—</div></div>
-    <div class="m-box"><div class="m-label">Final Progress</div><div class="m-val c-ex" id="m-ss">—</div></div>
+    <div class="m-box"><div class="m-label">Reliability</div><div class="m-val c-ex" id="m-ss">—</div></div>
   </div>
 </div>
 
@@ -118,32 +116,28 @@ function simulate(Kp, Ki, Kd, sp) {
   const out = new Float32Array(N);
   let y = 0, integral = 0, prevY = 0, filteredDeriv = 0;
   
-  // Smoothing for planning (Low pass filter)
-  const lpf = 0.1; 
+  // Reduced filtering to make Kd more reactive/visible
+  const lpf = 0.25; 
 
   for (let i = 0; i < N; i++) {
     const e = sp - y;
     
-    // 1. Experience
+    // Experience (Integral)
     integral += e * DT;
-    integral = Math.max(-1.5, Math.min(1.5, integral)); 
+    integral = Math.max(-2, Math.min(2, integral)); 
 
-    // 2. Planning (Derivative on Process Variable)
-    // By using (y - prevY) instead of (e - prevE), we avoid the "Kick" 
-    // when the target moves or Kp changes.
+    // Planning (Derivative) - We use Kd * 4 to make the impact obvious
     const rawDeriv = (y - prevY) / DT;
     filteredDeriv = lpf * rawDeriv + (1 - lpf) * filteredDeriv;
 
-    // 3. Control Signal (with internal dampening)
-    // Note: Kd is subtracted because it opposes the direction of movement (braking)
-    let u = (Kp * e) + (Ki * integral) - (Kd * 1.5 * filteredDeriv);
+    // The Force: Kp pulls forward, Ki pushes steady, Kd acts as the Brake (opposing velocity)
+    let u = (Kp * e) + (Ki * integral) - (Kd * 5.0 * filteredDeriv);
     
-    // 4. Human Capacity Saturation
-    // Limits the force so the line doesn't fly off the plot
-    u = Math.max(-5, Math.min(5, u));
+    // Saturation (Human Limit)
+    u = Math.max(-6, Math.min(6, u));
 
-    // 5. Plant (Human Inertia)
-    y += (u - y) * 0.12; 
+    // Plant: Human Inertia (lower factor = more 'swing', making Kd more useful)
+    y += (u - y) * 0.1; 
     
     out[i] = y;
     prevY = y;
@@ -165,7 +159,7 @@ function update() {
   const data = simulate(hw, ex, pl, tg);
   draw(data, tg);
   
-  // Calculate Results
+  // Metrics
   if (Math.abs(tg) < 0.1) return;
   const s = tg > 0 ? 1 : -1;
   const r1 = data.findIndex(v => s*v >= s*tg*0.9);
@@ -173,9 +167,9 @@ function update() {
   let max = 0;
   for(let v of data) if(s*v > s*max) max = v;
   const over = ((s*max - Math.abs(tg)) / Math.abs(tg)) * 100;
-  document.getElementById('m-burn').innerText = over > 1 ? over.toFixed(1)+'%' : 'None';
+  document.getElementById('m-burn').innerText = over > 1 ? over.toFixed(1)+'%' : 'Healthy';
   let si = N-1;
-  for(let i=N-1; i>=0; i--) if(Math.abs(data[i]-tg) > Math.abs(tg)*0.05) { si=i; break; }
+  for(let i=N-1; i>=0; i--) if(Math.abs(data[i]-tg) > Math.abs(tg)*0.03) { si=i; break; }
   document.getElementById('m-settle').innerText = (si*DT).toFixed(1)+'s';
   document.getElementById('m-ss').innerText = data[N-1].toFixed(2);
 }
@@ -187,42 +181,46 @@ function draw(data, sp) {
   const w = W/2, h = H/2;
   ctx.clearRect(0,0,w,h);
 
-  const PAD = { L: 40, R: 15, T: 25, B: 30 };
+  const PAD = { L: 40, R: 15, T: 30, B: 30 };
   const gW = w-PAD.L-PAD.R, gH = h-PAD.T-PAD.B;
   const toX = i => PAD.L + (i/(N-1))*gW;
-  const toY = v => (h-PAD.B) - ((v + 2)/4)*gH;
+  const toY = v => (h-PAD.B) - ((v + 2.5) / 5) * gH;
+
+  // Burnout Zone (Subtle Red Area)
+  if (sp !== 0) {
+    const s = sp > 0 ? 1 : -1;
+    ctx.fillStyle = 'rgba(239, 68, 68, 0.05)';
+    if (s > 0) ctx.fillRect(PAD.L, PAD.T, gW, toY(sp * 1.1) - PAD.T);
+    else ctx.fillRect(PAD.L, toY(sp * 1.1), gW, (h-PAD.B) - toY(sp * 1.1));
+  }
 
   // Grid
   ctx.strokeStyle = '#f1f5f9';
   ctx.lineWidth = 1;
   for(let i=-2; i<=2; i+=1) {
-    ctx.beginPath(); ctx.moveTo(PAD.L, toY(i)); ctx.lineTo(PAD.L+gW, toY(i)); ctx.stroke();
+    const y = toY(i);
+    ctx.beginPath(); ctx.moveTo(PAD.L, y); ctx.lineTo(PAD.L+gW, y); ctx.stroke();
   }
 
-  // Target Dash
+  // Target Line
   ctx.setLineDash([4, 4]);
-  ctx.strokeStyle = 'rgba(99, 102, 241, 0.4)';
+  ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)';
   ctx.beginPath(); ctx.moveTo(PAD.L, toY(sp)); ctx.lineTo(PAD.L+gW, toY(sp)); ctx.stroke();
   ctx.setLineDash([]);
 
-  // Main Progress Line
+  // Labeling
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "bold 8px Plus Jakarta Sans";
+  ctx.fillText("TARGET", PAD.L + 5, toY(sp) - 5);
+
+  // Path Line
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 2.5;
   ctx.lineJoin = 'round';
   ctx.beginPath();
   ctx.moveTo(toX(0), toY(0));
-  for(let i=0; i<N; i++) ctx.lineTo(toX(i), toY(data[i]));
+  for(let i=0; i<N; i++) ctx.lineTo(toX(i), data[i] > 2.5 ? toY(2.5) : data[i] < -2.5 ? toY(-2.5) : toY(data[i]));
   ctx.stroke();
-
-  // Labels
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '700 8px Plus Jakarta Sans';
-  ctx.fillText("TIME →", w - 45, h - 8);
-  ctx.save();
-  ctx.translate(12, h/2);
-  ctx.rotate(-Math.PI/2);
-  ctx.fillText("PROGRESS", -20, 0);
-  ctx.restore();
 }
 
 document.querySelectorAll('input').forEach(el => el.addEventListener('input', update));
