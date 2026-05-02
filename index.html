@@ -2,551 +2,273 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>PID Simulator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Human Response Simulator</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600&family=JetBrains+Mono:wght@500&display=swap');
 
   :root {
-    --bg:        #f4f5f7;
-    --surface:   #ffffff;
-    --border:    #e2e4e9;
-    --text:      #1c1e24;
-    --muted:     #8a8f9e;
-    --kp:        #2563eb;   /* blue */
-    --ki:        #d97706;   /* amber */
-    --kd:        #059669;   /* emerald */
-    --step:      #7c3aed;   /* violet */
-    --plot-out:  #2563eb;
-    --plot-sp:   #7c3aed;
-    --plot-err:  #e55c5c;
-    --track-bg:  #dde0e8;
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --muted: #64748b;
+    --hardwork: #ef4444; /* Red for energy */
+    --experience: #f59e0b; /* Amber for wisdom */
+    --planning: #10b981; /* Green for strategy */
+    --step: #6366f1;
   }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     background: var(--bg);
     color: var(--text);
-    min-height: 100dvh;
-    padding: 0 0 32px;
+    padding: 20px;
+    max-width: 600px;
+    margin: 0 auto;
   }
 
-  /* ── Header ── */
-  header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 16px 12px;
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-  }
+  header { margin-bottom: 24px; text-align: center; }
+  h1 { font-size: 1.25rem; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { font-size: 0.85rem; color: var(--muted); }
 
-  h1 {
-    font-size: 1.05rem;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    color: var(--text);
-  }
-
-  .subtitle {
-    font-size: 0.78rem;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-  }
-
-  /* ── Cards ── */
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    margin: 12px 12px 0;
-    padding: 14px 14px 16px;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   }
 
   .card-title {
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 12px;
-  }
-
-  /* ── Plot ── */
-  canvas {
-    display: block;
-    width: 100%;
-    border-radius: 6px;
-    background: #f9fafb;
-  }
-
-  .legend {
-    display: flex;
-    gap: 14px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
     font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     color: var(--muted);
+    margin-bottom: 16px;
   }
 
-  .legend-swatch {
-    width: 20px;
-    height: 3px;
-    border-radius: 2px;
-  }
+  canvas { width: 100%; background: #fff; border-radius: 8px; }
 
-  .legend-swatch.dashed {
-    background: repeating-linear-gradient(
-      to right,
-      var(--plot-sp) 0px, var(--plot-sp) 5px,
-      transparent 5px, transparent 9px
-    );
-    height: 2px;
-  }
-
-  /* ── Sliders ── */
-  .slider-group {
-    margin-bottom: 18px;
-  }
-  .slider-group:last-child { margin-bottom: 0; }
-
-  .slider-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-  }
-
-  .slider-label {
-    font-size: 0.88rem;
-    font-weight: 600;
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-  }
-
-  .slider-label sub {
-    font-size: 0.65em;
-  }
-
-  .slider-hint {
-    font-size: 0.7rem;
-    color: var(--muted);
-  }
-
-  .slider-readout {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.88rem;
-    font-weight: 500;
-    min-width: 44px;
-    text-align: right;
-  }
-
-  input[type=range] {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 6px;
-    border-radius: 3px;
-    outline: none;
-    cursor: pointer;
-  }
-
-  /* Thumb shared */
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    border: 3px solid var(--surface);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
-    cursor: pointer;
-  }
-
-  /* Per-slider colors */
-  #kp  { background: linear-gradient(to right, var(--kp)   var(--pct,30%), var(--track-bg) var(--pct,30%)); }
-  #kp::-webkit-slider-thumb  { background: var(--kp); }
-
-  #ki  { background: linear-gradient(to right, var(--ki)   var(--pct,15%), var(--track-bg) var(--pct,15%)); }
-  #ki::-webkit-slider-thumb  { background: var(--ki); }
-
-  #kd  { background: linear-gradient(to right, var(--kd)   var(--pct,10%), var(--track-bg) var(--pct,10%)); }
-  #kd::-webkit-slider-thumb  { background: var(--kd); }
-
-  #step { background: linear-gradient(to right, var(--track-bg) 50%, var(--track-bg) 50%); }
-  #step::-webkit-slider-thumb { background: var(--step); }
-
-  /* Step slider needs special center-fill handling via JS */
-
-  .divider {
-    height: 1px;
-    background: var(--border);
-    margin: 16px 0;
-  }
-
-  /* ── Metrics ── */
   .metrics {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 12px;
   }
 
   .metric-box {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 9px 12px;
+    background: #f1f5f9;
+    padding: 12px;
+    border-radius: 10px;
   }
 
-  .metric-label {
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 3px;
+  .metric-label { font-size: 0.65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+  .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1rem; margin-top: 4px; }
+
+  .slider-group { margin-bottom: 20px; }
+  .slider-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; font-weight: 600; }
+  .slider-desc { font-weight: 400; font-size: 0.75rem; color: var(--muted); }
+  
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: #e2e8f0;
+    outline: none;
   }
 
-  .metric-val {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.92rem;
-    font-weight: 500;
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid currentColor;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
 
-  .c-kp   { color: var(--kp);   }
-  .c-ki   { color: var(--ki);   }
-  .c-kd   { color: var(--kd);   }
-  .c-step { color: var(--step); }
+  .c-hw { color: var(--hardwork); }
+  .c-ex { color: var(--experience); }
+  .c-pl { color: var(--planning); }
+  .c-tg { color: var(--step); }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>PID Simulator</h1>
-  <span class="subtitle">step response</span>
+  <h1>Human Response Simulator</h1>
+  <div class="subtitle">Visualizing the PID of Personal Growth</div>
 </header>
 
-<!-- PLOT FIRST -->
 <div class="card">
-  <div class="card-title">Step Response</div>
-  <canvas id="plot" height="260"></canvas>
-  <div class="legend">
-    <div class="legend-item">
-      <div class="legend-swatch dashed"></div>
-      <span>Setpoint</span>
-    </div>
-    <div class="legend-item">
-      <div class="legend-swatch" style="background:var(--plot-out)"></div>
-      <span>Output</span>
-    </div>
-    <div class="legend-item">
-      <div class="legend-swatch" style="background:var(--plot-err); opacity:.7"></div>
-      <span>Error</span>
-    </div>
-  </div>
+  <div class="card-title">Progress vs. Target</div>
+  <canvas id="plot" height="240"></canvas>
 </div>
 
-<!-- METRICS -->
 <div class="card">
-  <div class="card-title">Response Metrics</div>
+  <div class="card-title">Outcome Analysis</div>
   <div class="metrics">
     <div class="metric-box">
-      <div class="metric-label">Rise Time</div>
-      <div class="metric-val c-kp" id="m-rise">—</div>
+      <div class="metric-label">Initiative (Rise)</div>
+      <div class="metric-val c-hw" id="m-rise">—</div>
     </div>
     <div class="metric-box">
-      <div class="metric-label">Overshoot</div>
-      <div class="metric-val c-ki" id="m-overshoot">—</div>
+      <div class="metric-label">Burnout (Overshoot)</div>
+      <div class="metric-val c-hw" id="m-burnout">—</div>
     </div>
     <div class="metric-box">
-      <div class="metric-label">Settle Time</div>
-      <div class="metric-val c-kd" id="m-settle">—</div>
+      <div class="metric-label">Stability (Settle)</div>
+      <div class="metric-val c-pl" id="m-settle">—</div>
     </div>
     <div class="metric-box">
-      <div class="metric-label">Steady State</div>
-      <div class="metric-val c-step" id="m-ss">—</div>
+      <div class="metric-label">Reliability (Final)</div>
+      <div class="metric-val c-ex" id="m-ss">—</div>
     </div>
   </div>
 </div>
 
-<!-- SLIDERS -->
 <div class="card">
-  <div class="card-title">PID Parameters</div>
+  <div class="card-title">Behavioral Inputs</div>
 
-  <!-- Kp -->
   <div class="slider-group">
-    <div class="slider-row">
-      <span class="slider-label c-kp">K<sub>p</sub> <span class="slider-hint">Proportional</span></span>
-      <span class="slider-readout c-kp" id="kp-val">1.00</span>
+    <div class="slider-header">
+      <span>Hard Work <span class="slider-desc">(Kp - Immediate Action)</span></span>
+      <span class="c-hw" id="hw-read">1.00</span>
     </div>
-    <input type="range" id="kp" min="0" max="3" step="0.01" value="1.0">
+    <input type="range" id="hw" min="0" max="4" step="0.05" value="1.5" class="c-hw">
   </div>
 
-  <!-- Ki -->
   <div class="slider-group">
-    <div class="slider-row">
-      <span class="slider-label c-ki">K<sub>i</sub> <span class="slider-hint">Integral</span></span>
-      <span class="slider-readout c-ki" id="ki-val">0.30</span>
+    <div class="slider-header">
+      <span>Experience <span class="slider-desc">(Ki - Past Persistence)</span></span>
+      <span class="c-ex" id="ex-read">0.30</span>
     </div>
-    <input type="range" id="ki" min="0" max="2" step="0.01" value="0.3">
+    <input type="range" id="ex" min="0" max="2" step="0.05" value="0.5" class="c-ex">
   </div>
 
-  <!-- Kd -->
   <div class="slider-group">
-    <div class="slider-row">
-      <span class="slider-label c-kd">K<sub>d</sub> <span class="slider-hint">Derivative</span></span>
-      <span class="slider-readout c-kd" id="kd-val">0.10</span>
+    <div class="slider-header">
+      <span>Planning <span class="slider-desc">(Kd - Foresight)</span></span>
+      <span class="c-pl" id="pl-read">0.10</span>
     </div>
-    <input type="range" id="kd" min="0" max="1" step="0.01" value="0.1">
+    <input type="range" id="pl" min="0" max="1.5" step="0.05" value="0.2" class="c-pl">
   </div>
 
-  <div class="divider"></div>
+  <div style="border-top: 1px solid var(--border); margin: 20px 0;"></div>
 
-  <!-- Step -->
   <div class="slider-group">
-    <div class="slider-row">
-      <span class="slider-label c-step">Step <span class="slider-hint">Amplitude</span></span>
-      <span class="slider-readout c-step" id="step-val">+1.00</span>
+    <div class="slider-header">
+      <span>Target Change <span class="slider-desc">(Step Amplitude)</span></span>
+      <span class="c-tg" id="tg-read">1.00</span>
     </div>
-    <input type="range" id="step" min="-1" max="1" step="0.01" value="1.0">
+    <input type="range" id="tg" min="-2" max="2" step="0.1" value="1.0" class="c-tg">
   </div>
 </div>
 
 <script>
-// ── Simulation ───────────────────────────────────────────────
-// Plant: G(s) = 1 / (s + 1)  — Euler, dt=0.02s, T=20s
-const DT = 0.02, T = 20;
-const N  = Math.round(T / DT);  // 1000 pts
+const DT = 0.02, T = 20, N = Math.round(T / DT);
+const canvas = document.getElementById('plot');
+const ctx = canvas.getContext('2d');
 
 function simulate(Kp, Ki, Kd, sp) {
   const out = new Float32Array(N);
-  const err = new Float32Array(N);
   let y = 0, integral = 0, prevE = 0;
-
   for (let i = 0; i < N; i++) {
-    const e    = sp - y;
-    integral  += e * DT;
-    // clamp integral to avoid windup runaway on display
-    integral   = Math.max(-6, Math.min(6, integral));
+    const e = sp - y;
+    integral = Math.max(-5, Math.min(5, integral + e * DT));
     const deriv = (e - prevE) / DT;
-    const u    = Kp * e + Ki * integral + Kd * deriv;
-    y         += (-y + u) * DT;
-    out[i]     = y;
-    err[i]     = e;
-    prevE      = e;
+    const u = Kp * e + Ki * integral + Kd * deriv;
+    y += (-y + u) * DT; // Simple plant response
+    out[i] = y;
+    prevE = e;
   }
-  return { out, err };
+  return out;
 }
 
-// ── Metrics ──────────────────────────────────────────────────
-function metrics(out, sp) {
-  if (sp === 0) return { rise: '—', over: '—', settle: '—', ss: '0.000' };
+function update() {
+  const hw = +document.getElementById('hw').value;
+  const ex = +document.getElementById('ex').value;
+  const pl = +document.getElementById('pl').value;
+  const tg = +document.getElementById('tg').value;
 
-  const abssp = Math.abs(sp);
-  const sign  = sp > 0 ? 1 : -1;
-  const t10   = sp * 0.10, t90 = sp * 0.90;
-  const tol   = abssp * 0.02;
+  document.getElementById('hw-read').textContent = hw.toFixed(2);
+  document.getElementById('ex-read').textContent = ex.toFixed(2);
+  document.getElementById('pl-read').textContent = pl.toFixed(2);
+  document.getElementById('tg-read').textContent = tg.toFixed(2);
 
+  const results = simulate(hw, ex, pl, tg);
+  draw(results, tg);
+  calculateMetrics(results, tg);
+}
+
+function calculateMetrics(out, sp) {
+  if (Math.abs(sp) < 0.1) return;
+  const sign = sp > 0 ? 1 : -1;
+  
+  // Initiative (Rise Time)
   let r0 = -1, r1 = -1;
-  for (let i = 0; i < N; i++) {
-    if (r0 < 0 && sign * out[i] >= sign * t10) r0 = i;
-    if (r0 >= 0 && sign * out[i] >= sign * t90) { r1 = i; break; }
+  for(let i=0; i<N; i++) {
+    if(r0 < 0 && sign*out[i] >= sign*sp*0.1) r0 = i;
+    if(r1 < 0 && sign*out[i] >= sign*sp*0.9) r1 = i;
   }
-  const rise = r0 >= 0 && r1 >= 0 ? ((r1 - r0) * DT).toFixed(2) + ' s' : '—';
+  document.getElementById('m-rise').textContent = r1 > 0 ? ((r1-r0)*DT).toFixed(2) + 's' : '—';
 
-  let peak = out[0];
-  for (let i = 1; i < N; i++) if (sign * out[i] > sign * peak) peak = out[i];
-  const over = (((sign * peak - abssp) / abssp) * 100);
-  const overStr = over > 0.05 ? over.toFixed(1) + ' %' : '0.0 %';
+  // Burnout (Overshoot)
+  let max = out[0];
+  for(let v of out) if(sign*v > sign*max) max = v;
+  const over = ((sign*max - Math.abs(sp)) / Math.abs(sp)) * 100;
+  document.getElementById('m-burnout').textContent = over > 0.5 ? over.toFixed(1) + '%' : 'Safe';
 
+  // Stability (Settling Time)
   let si = N - 1;
-  for (let i = N - 1; i >= 0; i--) {
-    if (Math.abs(out[i] - sp) > tol) { si = i + 1; break; }
+  for(let i = N-1; i>=0; i--) {
+    if(Math.abs(out[i]-sp) > Math.abs(sp)*0.02) { si = i; break; }
   }
-  const settle = (si * DT).toFixed(2) + ' s';
-
-  return { rise, over: overStr, settle, ss: out[N-1].toFixed(3) };
+  document.getElementById('m-settle').textContent = (si * DT).toFixed(1) + 's';
+  document.getElementById('m-ss').textContent = out[N-1].toFixed(2);
 }
 
-// ── Canvas ───────────────────────────────────────────────────
-const canvas = document.getElementById('plot');
-const ctx    = canvas.getContext('2d');
-const YMIN   = -3, YMAX = 3;
+function draw(data, sp) {
+  const W = canvas.width = canvas.offsetWidth * 2;
+  const H = canvas.height = 240 * 2;
+  ctx.scale(2,2);
+  const w = W/2, h = H/2;
+  
+  ctx.clearRect(0,0,w,h);
+  const toX = i => 40 + (i/(N-1))*(w-60);
+  const toY = v => h/2 - (v * 40);
 
-function resize() {
-  const w = canvas.parentElement.clientWidth - 28; // card padding
-  canvas.width  = w;
-  canvas.height = 260;
-}
-
-function draw(out, err, sp) {
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0, 0, W, H);
-
-  const PAD = { t: 14, r: 12, b: 32, l: 42 };
-  const PW = W - PAD.l - PAD.r;
-  const PH = H - PAD.t  - PAD.b;
-
-  const toX = i => PAD.l + (i / (N - 1)) * PW;
-  const toY = v => PAD.t + PH - ((v - YMIN) / (YMAX - YMIN)) * PH;
-
-  // ── background
-  ctx.fillStyle = '#f9fafb';
-  ctx.fillRect(0, 0, W, H);
-
-  // ── grid lines
-  const ySteps = [-3, -2, -1, 0, 1, 2, 3];
-  ctx.lineWidth = 1;
-  ySteps.forEach(v => {
-    const y = toY(v);
-    ctx.strokeStyle = v === 0 ? 'rgba(0,0,0,0.12)' : 'rgba(0,0,0,0.06)';
-    ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + PW, y); ctx.stroke();
-    ctx.fillStyle = '#9ca3af';
-    ctx.font = '10px DM Mono, monospace';
-    ctx.textAlign = 'right';
-    ctx.fillText(v.toFixed(0), PAD.l - 5, y + 3.5);
-  });
-
-  const xSteps = [0, 5, 10, 15, 20];
-  xSteps.forEach(t => {
-    const idx = Math.round(t / DT);
-    const x   = PAD.l + (Math.min(idx, N-1) / (N-1)) * PW;
-    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
-    ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t + PH); ctx.stroke();
-    ctx.fillStyle = '#9ca3af';
-    ctx.font = '10px DM Mono, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(t + 's', x, PAD.t + PH + 14);
-  });
-
-  // clip to plot area
-  ctx.save();
+  // Grid
+  ctx.strokeStyle = '#f1f5f9';
   ctx.beginPath();
-  ctx.rect(PAD.l, PAD.t, PW, PH);
-  ctx.clip();
-
-  // ── Setpoint dashed
-  if (sp !== 0) {
-    ctx.strokeStyle = 'rgba(124,58,237,0.55)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([6, 5]);
-    ctx.beginPath();
-    ctx.moveTo(PAD.l, toY(sp));
-    ctx.lineTo(PAD.l + PW, toY(sp));
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  // ── Error line
-  ctx.strokeStyle = 'rgba(229,92,92,0.55)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  for (let i = 0; i < N; i++) {
-    const x = toX(i), y = toY(err[i]);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
+  for(let i=-2; i<=2; i++) { ctx.moveTo(40, toY(i)); ctx.lineTo(w-20, toY(i)); }
   ctx.stroke();
 
-  // ── Output fill under curve
-  const grad = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + PH);
-  grad.addColorStop(0, 'rgba(37,99,235,0.13)');
-  grad.addColorStop(1, 'rgba(37,99,235,0.01)');
-  ctx.fillStyle = grad;
+  // Target Line
+  ctx.setLineDash([5, 5]);
+  ctx.strokeStyle = '#6366f1';
+  ctx.beginPath();
+  ctx.moveTo(40, toY(sp)); ctx.lineTo(w-20, toY(sp));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Progress Line
+  ctx.shadowBlur = 8;
+  ctx.shadowColor = 'rgba(15, 23, 42, 0.1)';
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(toX(0), toY(0));
-  for (let i = 0; i < N; i++) ctx.lineTo(toX(i), toY(out[i]));
-  ctx.lineTo(toX(N-1), toY(0));
-  ctx.closePath();
-  ctx.fill();
-
-  // ── Output line
-  ctx.strokeStyle = '#2563eb';
-  ctx.lineWidth = 2.5;
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  for (let i = 0; i < N; i++) {
-    const x = toX(i), y = toY(out[i]);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
+  for(let i=0; i<N; i++) ctx.lineTo(toX(i), toY(data[i]));
   ctx.stroke();
-
-  ctx.restore();
-
-  // ── Border box
-  ctx.strokeStyle = '#e2e4e9';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(PAD.l, PAD.t, PW, PH);
 }
 
-// ── Slider track fill ────────────────────────────────────────
-function trackFill(el) {
-  const min = +el.min, max = +el.max, val = +el.value;
-  if (el.id === 'step') {
-    // center-fill for bipolar slider
-    const center = ((0 - min) / (max - min)) * 100;
-    const pos    = ((val - min) / (max - min)) * 100;
-    const left   = Math.min(center, pos).toFixed(1);
-    const right  = Math.max(center, pos).toFixed(1);
-    el.style.background =
-      `linear-gradient(to right, var(--track-bg) ${left}%, var(--step) ${left}%, var(--step) ${right}%, var(--track-bg) ${right}%)`;
-  } else {
-    const pct = ((val - min) / (max - min) * 100).toFixed(1);
-    el.style.background =
-      `linear-gradient(to right, var(--${el.id}) ${pct}%, var(--track-bg) ${pct}%)`;
-  }
-}
-
-// ── Update ───────────────────────────────────────────────────
-function update() {
-  const Kp  = +document.getElementById('kp').value;
-  const Ki  = +document.getElementById('ki').value;
-  const Kd  = +document.getElementById('kd').value;
-  const sp  = +document.getElementById('step').value;
-
-  document.getElementById('kp-val').textContent   = Kp.toFixed(2);
-  document.getElementById('ki-val').textContent   = Ki.toFixed(2);
-  document.getElementById('kd-val').textContent   = Kd.toFixed(2);
-  document.getElementById('step-val').textContent = (sp >= 0 ? '+' : '') + sp.toFixed(2);
-
-  ['kp','ki','kd','step'].forEach(id => trackFill(document.getElementById(id)));
-
-  if (sp === 0) {
-    // flat zero — no simulation needed
-    const zero = new Float32Array(N);
-    draw(zero, zero, 0);
-    document.getElementById('m-rise').textContent     = '—';
-    document.getElementById('m-overshoot').textContent = '—';
-    document.getElementById('m-settle').textContent   = '—';
-    document.getElementById('m-ss').textContent       = '0.000';
-    return;
-  }
-
-  const { out, err } = simulate(Kp, Ki, Kd, sp);
-  const m = metrics(out, sp);
-
-  document.getElementById('m-rise').textContent      = m.rise;
-  document.getElementById('m-overshoot').textContent = m.over;
-  document.getElementById('m-settle').textContent    = m.settle;
-  document.getElementById('m-ss').textContent        = m.ss;
-
-  draw(out, err, sp);
-}
-
-// ── Init ─────────────────────────────────────────────────────
-['kp','ki','kd','step'].forEach(id =>
-  document.getElementById(id).addEventListener('input', update));
-
-window.addEventListener('resize', () => { resize(); update(); });
-
-resize();
+window.addEventListener('resize', update);
+document.querySelectorAll('input').forEach(i => i.addEventListener('input', update));
 update();
 </script>
 </body>
