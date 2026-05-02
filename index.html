@@ -13,9 +13,9 @@
     --border: #e2e8f0;
     --text: #0f172a;
     --muted: #64748b;
-    --hardwork: #ef4444; /* Red for energy */
-    --experience: #f59e0b; /* Amber for wisdom */
-    --planning: #10b981; /* Green for strategy */
+    --hardwork: #ef4444; 
+    --experience: #f59e0b; 
+    --planning: #10b981; 
     --step: #6366f1;
   }
 
@@ -24,72 +24,53 @@
     background: var(--bg);
     color: var(--text);
     padding: 20px;
-    max-width: 600px;
+    max-width: 650px;
     margin: 0 auto;
+    line-height: 1.5;
   }
 
-  header { margin-bottom: 24px; text-align: center; }
-  h1 { font-size: 1.25rem; font-weight: 700; margin-bottom: 4px; }
-  .subtitle { font-size: 0.85rem; color: var(--muted); }
+  header { margin-bottom: 20px; text-align: center; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: var(--text); }
+  .subtitle { font-size: 0.9rem; color: var(--muted); }
 
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 16px;
-    padding: 20px;
+    padding: 24px;
     margin-bottom: 16px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   }
 
   .card-title {
-    font-size: 0.75rem;
-    font-weight: 700;
+    font-size: 0.7rem;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
     color: var(--muted);
-    margin-bottom: 16px;
+    margin-bottom: 20px;
+    display: block;
   }
 
-  canvas { width: 100%; background: #fff; border-radius: 8px; }
+  canvas { width: 100%; height: 260px; background: #fff; border-radius: 8px; cursor: crosshair; }
 
-  .metrics {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
-  .metric-box {
-    background: #f1f5f9;
-    padding: 12px;
-    border-radius: 10px;
-  }
-
-  .metric-label { font-size: 0.65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
-  .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1rem; margin-top: 4px; }
-
-  .slider-group { margin-bottom: 20px; }
-  .slider-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; font-weight: 600; }
-  .slider-desc { font-weight: 400; font-size: 0.75rem; color: var(--muted); }
+  /* Sliders */
+  .slider-group { margin-bottom: 18px; }
+  .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.9rem; font-weight: 600; }
+  .slider-desc { font-weight: 400; font-size: 0.75rem; color: var(--muted); margin-left: 4px;}
   
   input[type=range] {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 8px;
-    border-radius: 4px;
-    background: #e2e8f0;
-    outline: none;
+    -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: #e2e8f0; outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid currentColor; cursor: pointer;
   }
 
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #fff;
-    border: 2px solid currentColor;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
+  /* Metrics Grid */
+  .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px; }
+  .metric-box { background: #f1f5f9; padding: 14px; border-radius: 12px; border: 1px solid #e2e8f0; }
+  .metric-label { font-size: 0.65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 4px;}
+  .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 600; }
 
   .c-hw { color: var(--hardwork); }
   .c-ex { color: var(--experience); }
@@ -101,19 +82,61 @@
 
 <header>
   <h1>Human Response Simulator</h1>
-  <div class="subtitle">Visualizing the PID of Personal Growth</div>
+  <div class="subtitle">Dynamics of Hard Work, Experience, and Planning</div>
 </header>
 
+<!-- 1. PLOT -->
 <div class="card">
-  <div class="card-title">Progress vs. Target</div>
-  <canvas id="plot" height="240"></canvas>
+  <span class="card-title">Behavioral Dynamics Plot</span>
+  <canvas id="plot"></canvas>
 </div>
 
+<!-- 2. SLIDERS -->
 <div class="card">
-  <div class="card-title">Outcome Analysis</div>
+  <span class="card-title">Adjustment of Traits</span>
+
+  <div class="slider-group">
+    <div class="slider-header">
+      <span>Hard Work <span class="slider-desc">(Drive)</span></span>
+      <span class="c-hw" id="hw-read">1.50</span>
+    </div>
+    <input type="range" id="hw" min="0" max="4" step="0.05" value="1.5" class="c-hw">
+  </div>
+
+  <div class="slider-group">
+    <div class="slider-header">
+      <span>Experience <span class="slider-desc">(Consistency)</span></span>
+      <span class="c-ex" id="ex-read">0.50</span>
+    </div>
+    <input type="range" id="ex" min="0" max="2" step="0.05" value="0.5" class="c-ex">
+  </div>
+
+  <div class="slider-group">
+    <div class="slider-header">
+      <span>Planning <span class="slider-desc">(Damping)</span></span>
+      <span class="c-pl" id="pl-read">0.05</span>
+    </div>
+    <!-- Reduced range and smaller default for Planning to avoid extreme jitter -->
+    <input type="range" id="pl" min="0" max="0.5" step="0.01" value="0.05" class="c-pl">
+  </div>
+
+  <div style="border-top: 1px solid var(--border); margin: 20px 0;"></div>
+
+  <div class="slider-group">
+    <div class="slider-header">
+      <span>Target Change <span class="slider-desc">(Goal)</span></span>
+      <span class="c-tg" id="tg-read">1.00</span>
+    </div>
+    <input type="range" id="tg" min="-2" max="2" step="0.1" value="1.0" class="c-tg">
+  </div>
+</div>
+
+<!-- 3. OUTCOME ANALYSIS (Moved to bottom) -->
+<div class="card">
+  <span class="card-title">Outcome Analysis</span>
   <div class="metrics">
     <div class="metric-box">
-      <div class="metric-label">Initiative (Rise)</div>
+      <div class="metric-label">Initiative (Rise Time)</div>
       <div class="metric-val c-hw" id="m-rise">—</div>
     </div>
     <div class="metric-box">
@@ -121,51 +144,13 @@
       <div class="metric-val c-hw" id="m-burnout">—</div>
     </div>
     <div class="metric-box">
-      <div class="metric-label">Stability (Settle)</div>
+      <div class="metric-label">Stability (Settling)</div>
       <div class="metric-val c-pl" id="m-settle">—</div>
     </div>
     <div class="metric-box">
-      <div class="metric-label">Reliability (Final)</div>
+      <div class="metric-label">Reliability (Steady State)</div>
       <div class="metric-val c-ex" id="m-ss">—</div>
     </div>
-  </div>
-</div>
-
-<div class="card">
-  <div class="card-title">Behavioral Inputs</div>
-
-  <div class="slider-group">
-    <div class="slider-header">
-      <span>Hard Work <span class="slider-desc">(Kp - Immediate Action)</span></span>
-      <span class="c-hw" id="hw-read">1.00</span>
-    </div>
-    <input type="range" id="hw" min="0" max="4" step="0.05" value="1.5" class="c-hw">
-  </div>
-
-  <div class="slider-group">
-    <div class="slider-header">
-      <span>Experience <span class="slider-desc">(Ki - Past Persistence)</span></span>
-      <span class="c-ex" id="ex-read">0.30</span>
-    </div>
-    <input type="range" id="ex" min="0" max="2" step="0.05" value="0.5" class="c-ex">
-  </div>
-
-  <div class="slider-group">
-    <div class="slider-header">
-      <span>Planning <span class="slider-desc">(Kd - Foresight)</span></span>
-      <span class="c-pl" id="pl-read">0.10</span>
-    </div>
-    <input type="range" id="pl" min="0" max="1.5" step="0.05" value="0.2" class="c-pl">
-  </div>
-
-  <div style="border-top: 1px solid var(--border); margin: 20px 0;"></div>
-
-  <div class="slider-group">
-    <div class="slider-header">
-      <span>Target Change <span class="slider-desc">(Step Amplitude)</span></span>
-      <span class="c-tg" id="tg-read">1.00</span>
-    </div>
-    <input type="range" id="tg" min="-2" max="2" step="0.1" value="1.0" class="c-tg">
   </div>
 </div>
 
@@ -180,9 +165,10 @@ function simulate(Kp, Ki, Kd, sp) {
   for (let i = 0; i < N; i++) {
     const e = sp - y;
     integral = Math.max(-5, Math.min(5, integral + e * DT));
+    // We keep Kd slightly scaled down internally for visual smoothness
     const deriv = (e - prevE) / DT;
-    const u = Kp * e + Ki * integral + Kd * deriv;
-    y += (-y + u) * DT; // Simple plant response
+    const u = Kp * e + Ki * integral + (Kd * 0.5) * deriv; 
+    y += (-y + u) * DT; 
     out[i] = y;
     prevE = e;
   }
@@ -206,10 +192,15 @@ function update() {
 }
 
 function calculateMetrics(out, sp) {
-  if (Math.abs(sp) < 0.1) return;
+  if (Math.abs(sp) < 0.05) {
+    document.getElementById('m-rise').textContent = '—';
+    document.getElementById('m-burnout').textContent = '—';
+    document.getElementById('m-settle').textContent = '—';
+    document.getElementById('m-ss').textContent = '0.00';
+    return;
+  }
   const sign = sp > 0 ? 1 : -1;
   
-  // Initiative (Rise Time)
   let r0 = -1, r1 = -1;
   for(let i=0; i<N; i++) {
     if(r0 < 0 && sign*out[i] >= sign*sp*0.1) r0 = i;
@@ -217,13 +208,11 @@ function calculateMetrics(out, sp) {
   }
   document.getElementById('m-rise').textContent = r1 > 0 ? ((r1-r0)*DT).toFixed(2) + 's' : '—';
 
-  // Burnout (Overshoot)
   let max = out[0];
   for(let v of out) if(sign*v > sign*max) max = v;
   const over = ((sign*max - Math.abs(sp)) / Math.abs(sp)) * 100;
-  document.getElementById('m-burnout').textContent = over > 0.5 ? over.toFixed(1) + '%' : 'Safe';
+  document.getElementById('m-burnout').textContent = over > 0.5 ? over.toFixed(1) + '%' : 'None';
 
-  // Stability (Settling Time)
   let si = N - 1;
   for(let i = N-1; i>=0; i--) {
     if(Math.abs(out[i]-sp) > Math.abs(sp)*0.02) { si = i; break; }
@@ -234,36 +223,63 @@ function calculateMetrics(out, sp) {
 
 function draw(data, sp) {
   const W = canvas.width = canvas.offsetWidth * 2;
-  const H = canvas.height = 240 * 2;
+  const H = canvas.height = 260 * 2;
   ctx.scale(2,2);
   const w = W/2, h = H/2;
   
   ctx.clearRect(0,0,w,h);
-  const toX = i => 40 + (i/(N-1))*(w-60);
-  const toY = v => h/2 - (v * 40);
+  const PAD_L = 50, PAD_B = 40, PAD_T = 20, PAD_R = 20;
+  const graphW = w - PAD_L - PAD_R;
+  const graphH = h - PAD_T - PAD_B;
 
-  // Grid
+  const toX = i => PAD_L + (i/(N-1)) * graphW;
+  const toY = v => (h - PAD_B) - ((v + 2.5) / 5) * graphH;
+
+  // Axis Labels
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "bold 10px Plus Jakarta Sans";
+  
+  // Y-Axis (State / Progress)
+  ctx.save();
+  ctx.translate(15, h/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.textAlign = "center";
+  ctx.fillText("ACHIEVEMENT / STATE", 0, 0);
+  ctx.restore();
+
+  // X-Axis (Time)
+  ctx.textAlign = "center";
+  ctx.fillText("TIME (SECONDS)", PAD_L + graphW/2, h - 10);
+
+  // Grid & Y-Ticks
   ctx.strokeStyle = '#f1f5f9';
-  ctx.beginPath();
-  for(let i=-2; i<=2; i++) { ctx.moveTo(40, toY(i)); ctx.lineTo(w-20, toY(i)); }
-  ctx.stroke();
+  ctx.lineWidth = 1;
+  ctx.textAlign = "right";
+  for(let i=-2; i<=2; i++) {
+    const y = toY(i);
+    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(w-PAD_R, y); ctx.stroke();
+    ctx.fillText(i.toFixed(1), PAD_L - 8, y + 4);
+  }
 
   // Target Line
-  ctx.setLineDash([5, 5]);
-  ctx.strokeStyle = '#6366f1';
+  ctx.setLineDash([6, 4]);
+  ctx.strokeStyle = 'rgba(99, 102, 241, 0.4)';
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(40, toY(sp)); ctx.lineTo(w-20, toY(sp));
+  ctx.moveTo(PAD_L, toY(sp)); ctx.lineTo(w-PAD_R, toY(sp));
   ctx.stroke();
   ctx.setLineDash([]);
 
   // Progress Line
-  ctx.shadowBlur = 8;
-  ctx.shadowColor = 'rgba(15, 23, 42, 0.1)';
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 3;
+  ctx.lineJoin = 'round';
   ctx.beginPath();
   ctx.moveTo(toX(0), toY(0));
-  for(let i=0; i<N; i++) ctx.lineTo(toX(i), toY(data[i]));
+  for(let i=0; i<N; i++) {
+    const x = toX(i), y = toY(data[i]);
+    if(y > 0 && y < h) ctx.lineTo(x, y); // Keep drawing within bounds
+  }
   ctx.stroke();
 }
 
