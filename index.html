@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Human Performance PID</title>
+<title>Human Performance PID with Fatigue</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;600;700&family=JetBrains+Mono:wght=500&display=swap');
 
   :root {
     --bg: #f8fafc;
@@ -17,6 +17,7 @@
     --experience: #f59e0b; 
     --planning: #10b981; 
     --target: #6366f1;
+    --fatigue: #a855f7;
   }
 
   body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); padding: 15px; max-width: 600px; margin: 0 auto; }
@@ -45,17 +46,18 @@
   .c-ex { color: var(--experience); }
   .c-pl { color: var(--planning); }
   .c-tg { color: var(--target); }
+  .c-ft { color: var(--fatigue); }
 </style>
 </head>
 <body>
 
 <header>
   <h1>The Human PID Balance</h1>
-  <div class="subtitle">Action, Experience, and Foresight</div>
+  <div class="subtitle">Action, Experience, Foresight, and Fatigue</div>
 </header>
 
 <div class="card">
-  <span class="card-title">Positive Progress Graph</span>
+  <span class="card-title">Progress & Fatigue Graph</span>
   <canvas id="plot"></canvas>
 </div>
 
@@ -64,8 +66,8 @@
   
   <div class="slider-group">
     <div class="slider-info">
-      <span>Hard Work <span class="slider-desc">(Kp)</span></span>
-      <span class="c-hw" id="v-hw">2.0</span>
+      <span>Hard Work <span class="slider-desc">(Kp - Base Drive)</span></span>
+      <span class="c-hw" id="v-hw">2.5</span>
     </div>
     <input type="range" id="hw" min="0" max="5" step="0.1" value="2.5" class="c-hw">
   </div>
@@ -73,7 +75,7 @@
   <div class="slider-group">
     <div class="slider-info">
       <span>Experience <span class="slider-desc">(Ki)</span></span>
-      <span class="c-ex" id="v-ex">0.5</span>
+      <span class="c-ex" id="v-ex">0.8</span>
     </div>
     <input type="range" id="ex" min="0" max="4" step="0.1" value="0.8" class="c-ex">
   </div>
@@ -81,7 +83,7 @@
   <div class="slider-group">
     <div class="slider-info">
       <span>Planning <span class="slider-desc">(Kd)</span></span>
-      <span class="c-pl" id="v-pl">0.5</span>
+      <span class="c-pl" id="v-pl">0.50</span>
     </div>
     <input type="range" id="pl" min="0" max="2" step="0.01" value="0.5" class="c-pl">
   </div>
@@ -93,7 +95,6 @@
       <span>Target Goal <span class="slider-desc">(0.0 to 2.0)</span></span>
       <span class="c-tg" id="v-tg">1.0</span>
     </div>
-    <!-- Target now only 0 to 2 -->
     <input type="range" id="tg" min="0" max="2" step="0.1" value="1.0" class="c-tg">
   </div>
 </div>
@@ -104,7 +105,7 @@
     <div class="m-box"><div class="m-label">Initiative</div><div class="m-val c-hw" id="m-rise">—</div></div>
     <div class="m-box"><div class="m-label">Burnout (Overshoot)</div><div class="m-val c-hw" id="m-burn">—</div></div>
     <div class="m-box"><div class="m-label">Stability Time</div><div class="m-val c-pl" id="m-settle">—</div></div>
-    <div class="m-box"><div class="m-label">Reliability</div><div class="m-val c-ex" id="m-ss">—</div></div>
+    <div class="m-box"><div class="m-label">Peak Fatigue</div><div class="m-val c-ft" id="m-fatigue">—</div></div>
   </div>
 </div>
 
@@ -114,8 +115,11 @@ const canvas = document.getElementById('plot');
 const ctx = canvas.getContext('2d');
 
 function simulate(Kp, Ki, Kd, sp) {
-  const out = new Float32Array(N);
+  const progressOut = new Float32Array(N);
+  const fatigueOut = new Float32Array(N);
+  
   let y = 0, integral = 0, prevY = 0, filteredDeriv = 0;
+  let fatigue = 0;
   const lpf = 0.25; 
 
   for (let i = 0; i < N; i++) {
@@ -127,20 +131,33 @@ function simulate(Kp, Ki, Kd, sp) {
     const rawDeriv = (y - prevY) / DT;
     filteredDeriv = lpf * rawDeriv + (1 - lpf) * filteredDeriv;
 
-    let u = (Kp * e) + (Ki * integral) - (Kd * 5.0 * filteredDeriv);
+    // Fatigue effect: Effective Kp drops dynamically based on accumulated fatigue
+    const effectiveKp = Math.max(0.1, Kp * (1 - fatigue));
+
+    let u = (effectiveKp * e) + (Ki * integral) - (Kd * 5.0 * filteredDeriv);
     
-    // Saturation & Positive Clamp (Can't go below 0 effort)
-    u = Math.max(-2, Math.min(6, u));
+    // Saturation limit check for tracking fatigue accumulation
+    const upperSaturationLimit = 6;
+    u = Math.max(-2, Math.min(upperSaturationLimit, u));
+
+    // Fatigue accumulation mechanics
+    if (u > 4.0) { 
+      // High effort burns you out over time
+      fatigue += 0.015; 
+    } else {
+      // Resting or low effort allows recovery
+      fatigue -= 0.008; 
+    }
+    fatigue = Math.max(0, Math.min(0.85, fatigue)); // Cap fatigue recovery at 0 and max exhaust at 85%
 
     y += (u - y) * 0.1; 
-    
-    // Ensure progress is never negative
     if (y < 0) y = 0;
 
-    out[i] = y;
+    progressOut[i] = y;
+    fatigueOut[i] = fatigue;
     prevY = y;
   }
-  return out;
+  return { progress: progressOut, fatigue: fatigueOut };
 }
 
 function update() {
@@ -154,32 +171,35 @@ function update() {
   document.getElementById('v-pl').innerText = pl.toFixed(2);
   document.getElementById('v-tg').innerText = tg.toFixed(1);
 
-  const data = simulate(hw, ex, pl, tg);
-  draw(data, tg);
+  const { progress, fatigue } = simulate(hw, ex, pl, tg);
+  draw(progress, fatigue, tg);
   
   if (tg <= 0.05) {
     document.getElementById('m-rise').innerText = "N/A";
     document.getElementById('m-burn').innerText = "0%";
     document.getElementById('m-settle').innerText = "0s";
-    document.getElementById('m-ss').innerText = "0.00";
+    document.getElementById('m-fatigue').innerText = "0%";
     return;
   }
 
-  const r1 = data.findIndex(v => v >= tg*0.9);
+  const r1 = progress.findIndex(v => v >= tg*0.9);
   document.getElementById('m-rise').innerText = r1 > 0 ? (r1*DT).toFixed(2)+'s' : '—';
   
-  let max = 0;
-  for(let v of data) if(v > max) max = v;
-  const over = ((max - tg) / tg) * 100;
+  let maxProgress = 0;
+  for(let v of progress) if(v > maxProgress) maxProgress = v;
+  const over = ((maxProgress - tg) / tg) * 100;
   document.getElementById('m-burn').innerText = over > 1 ? over.toFixed(1)+'%' : 'Healthy';
   
   let si = N-1;
-  for(let i=N-1; i>=0; i--) if(Math.abs(data[i]-tg) > tg*0.03) { si=i; break; }
+  for(let i=N-1; i>=0; i--) if(Math.abs(progress[i]-tg) > tg*0.03) { si=i; break; }
   document.getElementById('m-settle').innerText = (si*DT).toFixed(1)+'s';
-  document.getElementById('m-ss').innerText = data[N-1].toFixed(2);
+
+  let maxFatigue = 0;
+  for(let f of fatigue) if(f > maxFatigue) maxFatigue = f;
+  document.getElementById('m-fatigue').innerText = (maxFatigue * 100).toFixed(0) + '%';
 }
 
-function draw(data, sp) {
+function draw(progress, fatigue, sp) {
   const W = canvas.width = canvas.offsetWidth * 2;
   const H = canvas.height = 240 * 2;
   ctx.scale(2,2);
@@ -189,18 +209,17 @@ function draw(data, sp) {
   const PAD = { L: 40, R: 15, T: 30, B: 30 };
   const gW = w-PAD.L-PAD.R, gH = h-PAD.T-PAD.B;
   
-  // Adjusted for 0 to 2 scale
   const toX = i => PAD.L + (i/(N-1))*gW;
   const toY = v => (h-PAD.B) - (v / 2.2) * gH;
 
-  // Burnout Zone (Red at top)
+  // Burnout Danger Zone Fill
   if (sp > 0) {
     ctx.fillStyle = 'rgba(239, 68, 68, 0.04)';
     const burnoutStart = toY(sp * 1.05);
     ctx.fillRect(PAD.L, PAD.T, gW, burnoutStart - PAD.T);
   }
 
-  // Grid
+  // Grid Structure
   ctx.strokeStyle = '#f1f5f9';
   ctx.lineWidth = 1;
   for(let i=0; i<=2; i+=0.5) {
@@ -211,24 +230,34 @@ function draw(data, sp) {
     ctx.fillText(i.toFixed(1), 15, y + 3);
   }
 
-  // Target Line
+  // Target Goal Line
   ctx.setLineDash([4, 4]);
   ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)';
   ctx.beginPath(); ctx.moveTo(PAD.L, toY(sp)); ctx.lineTo(PAD.L+gW, toY(sp)); ctx.stroke();
   ctx.setLineDash([]);
 
-  // Progress Line
+  // Draw Fatigue Curve (Purple fill line)
+  ctx.strokeStyle = 'rgba(168, 85, 247, 0.4)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(toX(0), toY(fatigue[0]));
+  for(let i=1; i<N; i++) {
+    ctx.lineTo(toX(i), toY(fatigue[i]));
+  }
+  ctx.stroke();
+
+  // Draw Main Life Progress Curve
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 2.5;
   ctx.lineJoin = 'round';
   ctx.beginPath();
   ctx.moveTo(toX(0), toY(0));
   for(let i=0; i<N; i++) {
-      ctx.lineTo(toX(i), toY(data[i]));
+    ctx.lineTo(toX(i), toY(progress[i]));
   }
   ctx.stroke();
 
-  // Axis Labels
+  // Graphical Legend Labels
   ctx.fillStyle = "#94a3b8";
   ctx.font = "bold 8px Plus Jakarta Sans";
   ctx.fillText("TIME →", w - 45, h - 8);
