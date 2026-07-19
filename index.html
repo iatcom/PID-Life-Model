@@ -128,34 +128,30 @@ function simulate(Kp, Ki, Kd, sp) {
     integral += e * DT;
     integral = Math.max(-2, Math.min(2, integral)); 
 
+    // FIXED: rawDeriv now tracks the difference between current 'y' and 'prevY' from the last loop execution
     const rawDeriv = (y - prevY) / DT;
     filteredDeriv = lpf * rawDeriv + (1 - lpf) * filteredDeriv;
 
-    // Fatigue effect: Effective Kp drops dynamically based on accumulated fatigue
     const effectiveKp = Math.max(0.1, Kp * (1 - fatigue));
 
-    let u = (effectiveKp * e) + (Ki * integral) - (Kd * 5.0 * filteredDeriv);
+    // Kd acts on the filtered derivative of the output to aggressively dampen sudden spikes
+    let u = (effectiveKp * e) + (Ki * integral) - (Kd * 2.5 * filteredDeriv);
     
-    // Saturation limit check for tracking fatigue accumulation
-    const upperSaturationLimit = 6;
-    u = Math.max(-2, Math.min(upperSaturationLimit, u));
+    u = Math.max(-2, Math.min(6, u));
 
-    // Fatigue accumulation mechanics
     if (u > 4.0) { 
-      // High effort burns you out over time
       fatigue += 0.015; 
     } else {
-      // Resting or low effort allows recovery
       fatigue -= 0.008; 
     }
-    fatigue = Math.max(0, Math.min(0.85, fatigue)); // Cap fatigue recovery at 0 and max exhaust at 85%
+    fatigue = Math.max(0, Math.min(0.85, fatigue)); 
 
+    // FIXED: Save the actual previous value BEFORE updating 'y'
+    prevY = y; 
     y += (u - y) * 0.1; 
-    if (y < 0) y = 0;
 
     progressOut[i] = y;
     fatigueOut[i] = fatigue;
-    prevY = y;
   }
   return { progress: progressOut, fatigue: fatigueOut };
 }
@@ -212,14 +208,12 @@ function draw(progress, fatigue, sp) {
   const toX = i => PAD.L + (i/(N-1))*gW;
   const toY = v => (h-PAD.B) - (v / 2.2) * gH;
 
-  // Burnout Danger Zone Fill
   if (sp > 0) {
     ctx.fillStyle = 'rgba(239, 68, 68, 0.04)';
     const burnoutStart = toY(sp * 1.05);
     ctx.fillRect(PAD.L, PAD.T, gW, burnoutStart - PAD.T);
   }
 
-  // Grid Structure
   ctx.strokeStyle = '#f1f5f9';
   ctx.lineWidth = 1;
   for(let i=0; i<=2; i+=0.5) {
@@ -230,13 +224,12 @@ function draw(progress, fatigue, sp) {
     ctx.fillText(i.toFixed(1), 15, y + 3);
   }
 
-  // Target Goal Line
   ctx.setLineDash([4, 4]);
   ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)';
   ctx.beginPath(); ctx.moveTo(PAD.L, toY(sp)); ctx.lineTo(PAD.L+gW, toY(sp)); ctx.stroke();
   ctx.setLineDash([]);
 
-  // Draw Fatigue Curve (Purple fill line)
+  // Fatigue Curve (Purple)
   ctx.strokeStyle = 'rgba(168, 85, 247, 0.4)';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
@@ -246,7 +239,7 @@ function draw(progress, fatigue, sp) {
   }
   ctx.stroke();
 
-  // Draw Main Life Progress Curve
+  // Progress Curve (Black)
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 2.5;
   ctx.lineJoin = 'round';
@@ -257,7 +250,6 @@ function draw(progress, fatigue, sp) {
   }
   ctx.stroke();
 
-  // Graphical Legend Labels
   ctx.fillStyle = "#94a3b8";
   ctx.font = "bold 8px Plus Jakarta Sans";
   ctx.fillText("TIME →", w - 45, h - 8);
